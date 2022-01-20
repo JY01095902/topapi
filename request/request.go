@@ -78,8 +78,10 @@ func NewRequest(appKey, appSecret, sessionKey string, options ...option) APIRequ
 func (req APIRequest) checkAPIResponse(val Values) error {
 	type ErrResponse struct {
 		Error struct {
-			Code    int    `json:"code"`
-			Message string `json:"msg"`
+			Code       int    `json:"code"`
+			Message    string `json:"msg"`
+			SubCode    string `json:"sub_code"`
+			SubMessage string `json:"sub_msg"`
 		} `json:"error_response"`
 	}
 
@@ -94,7 +96,11 @@ func (req APIRequest) checkAPIResponse(val Values) error {
 	}
 
 	if resp.Error.Code != 0 {
-		return fmt.Errorf("%w: %s", ErrTOPAPIBizError, resp.Error.Message)
+		msg := resp.Error.Message
+		if resp.Error.SubMessage != "" {
+			msg += "（" + resp.Error.SubMessage + "）"
+		}
+		return fmt.Errorf("%w: %s", ErrTOPAPIBizError, msg)
 	}
 
 	return nil
