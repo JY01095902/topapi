@@ -192,6 +192,8 @@ func (proxy TradeProxy) GetFullinfoTrade(tid string) (Trade, error) {
 		"buyer_cod_fee",
 		"modified",
 		"end_time",
+		"nr_outer_iid",
+		"outer_iid",
 		"buyer_nick",
 		"credit_card_fee",
 		"has_yfx",
@@ -245,6 +247,7 @@ func (proxy TradeProxy) GetFullinfoTrade(tid string) (Trade, error) {
 	}
 	params := url.Values{}
 	params.Add("tid", tid)
+	params.Add("include_oaid", "true")
 	params.Add("fields", strings.Join(fields, ","))
 
 	resp, err := proxy.req.Get("taobao.trade.fullinfo.get", params)
