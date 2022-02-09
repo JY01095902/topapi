@@ -69,10 +69,12 @@ func (proxy WMSProxy) ListSerialNumberInfos(opts ...option) ([]SerialNumberInfo,
 			return 0
 		}
 
+		// log.Printf("parse total val: %+v", val)
+		// log.Printf("parse total r: %+v", r)
 		return r.Result.Total
 	}
 
-	resp, err := proxy.req.GetAll("taobao.wlb.wms.sn.info.query", params, parseTotal)
+	resp, err := proxy.req.GetAll("taobao.wlb.wms.sn.info.query", params, "page_index", "page_size", parseTotal)
 	if err != nil {
 		return nil, err
 	}

@@ -52,7 +52,7 @@ func TestGetAll(t *testing.T) {
 	}
 
 	req := NewRequest("", "", "")
-	vals, err := req.GetAll("", url.Values{}, parseTotal)
+	vals, err := req.GetAll("", url.Values{}, "", "", parseTotal)
 	assert.Nil(t, err)
 	assert.Equal(t, int(math.Ceil(5924.0/100)), len(vals))
 	result := []interface{}{}
@@ -72,10 +72,6 @@ func TestGetAll(t *testing.T) {
 			}
 		}
 	}
-
-	// for _, v := range result {
-	// 	fmt.Printf("%+v \n", v)
-	// }
 
 	assert.Equal(t, 5924, len(result))
 }

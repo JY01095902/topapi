@@ -112,11 +112,11 @@ func (req APIRequest) execute(r *resty.Request, method, url string) (Values, err
 		Execute(method, url)
 
 	if err != nil {
-		return nil, fmt.Errorf("%w error: %s", ErrCallTOPAPIFailed, err.Error())
+		return nil, fmt.Errorf("%w error - 1: %s", ErrCallTOPAPIFailed, err.Error())
 	}
 
 	if resp.StatusCode() != 200 {
-		return nil, fmt.Errorf("%w error: %s", ErrCallTOPAPIFailed, resp.String())
+		return nil, fmt.Errorf("%w error - 2: %s", ErrCallTOPAPIFailed, resp.String())
 	}
 
 	var result Values
@@ -141,10 +141,11 @@ func (req APIRequest) Get(apiName string, params url.Values) (Values, error) {
 	for k, v := range req.config {
 		mergedParams.Add(k, v)
 	}
-	r := resty.New().R().
+
+	r := resty.New().SetTimeout(30 * time.Second).R().
 		EnableTrace()
 
-	url := req.baseURL + "?" + makeQueryString(mergedParams, req.appSecret)
+	url := req.baseURL + "?" + makeQueryString(mergedParams, req.appSecret, req.config["sign_method"])
 
 	return req.execute(r, resty.MethodGet, url)
 }
@@ -184,7 +185,8 @@ func (req APIRequest) GetMock(apiName string, params url.Values) (Values, error)
 		"trades":        data[start:end],
 	}, nil
 }
-func (req APIRequest) GetAll(apiName string, params url.Values, parseTotal parseTotalFunc) ([]Values, error) {
+
+func (req APIRequest) GetAll(apiName string, params url.Values, pageNumberKey, pageSizeKey string, parseTotal parseTotalFunc) ([]Values, error) {
 	copyParams := func(params url.Values) url.Values {
 		result := url.Values{}
 		for k := range params {
@@ -198,8 +200,8 @@ func (req APIRequest) GetAll(apiName string, params url.Values, parseTotal parse
 	result := []Values{} // 每一条是一页的数据
 	pageNumber, pageSize := 1, 100
 	copiedParams := copyParams(params)
-	copiedParams.Set("page_no", strconv.Itoa(pageNumber))
-	copiedParams.Set("page_size", strconv.Itoa(pageSize))
+	copiedParams.Set(pageNumberKey, strconv.Itoa(pageNumber))
+	copiedParams.Set(pageSizeKey, strconv.Itoa(pageSize))
 
 	resp, err := req.Get(apiName, copiedParams)
 	if err != nil {
@@ -222,7 +224,6 @@ func (req APIRequest) GetAll(apiName string, params url.Values, parseTotal parse
 
 		for vals := range valsChan {
 			result = append(result, vals)
-			// log.Printf("result len: %+v", len(result))
 		}
 	}()
 
@@ -239,7 +240,7 @@ func (req APIRequest) GetAll(apiName string, params url.Values, parseTotal parse
 
 		for params := range failedChan {
 		Retry:
-			// time.Sleep(100 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 			log.Printf("retry body: %+v", params)
 			if resp, err := req.Get(apiName, params); err == nil {
 				valsChan <- resp
@@ -261,7 +262,6 @@ func (req APIRequest) GetAll(apiName string, params url.Values, parseTotal parse
 			copiedParams := copyParams(params)
 			copiedParams.Set("page_no", strconv.Itoa(pageNum))
 			copiedParams.Set("page_size", strconv.Itoa(pageSize))
-			// log.Printf("pageNumber: %s, pageSize: %s", copiedParams.Get("page_no"), copiedParams.Get("page_size"))
 			if resp, err := req.Get(apiName, copiedParams); err == nil {
 				valsChan <- resp
 			} else {
@@ -271,7 +271,7 @@ func (req APIRequest) GetAll(apiName string, params url.Values, parseTotal parse
 			}
 		})
 
-		// time.Sleep(100 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	wg.Wait()
