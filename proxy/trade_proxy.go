@@ -26,6 +26,14 @@ func (trade Trade) Status() string {
 	return ""
 }
 
+func (trade Trade) Created() string {
+	if tid, ok := trade["created"].(string); ok {
+		return tid
+	}
+
+	return ""
+}
+
 type TradeProxy struct {
 	req request.APIRequest
 }

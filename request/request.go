@@ -17,7 +17,7 @@ import (
 
 type config map[string]string
 
-// default APIRequest confit
+// default APIRequest config
 func newConfig(appKey, sessionKey string) config {
 	config := map[string]string{
 		"app_key":     appKey,
